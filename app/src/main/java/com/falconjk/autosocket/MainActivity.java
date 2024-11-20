@@ -27,7 +27,7 @@ public class MainActivity extends Activity implements SocketImpl.SocketListener 
     private TextView localIpText;
     private LinearLayout serverIpLayout;
     private EditText serverIpEditText;
-    private SocketImpl socket;
+    private SocketImpl socketImpl;
     private ScrollView scrollView;
 
     @Override
@@ -38,7 +38,7 @@ public class MainActivity extends Activity implements SocketImpl.SocketListener 
         initializeViews();
         setupListeners();
 
-        localIpText.setText("本機IP: " + socket.getIP());
+        localIpText.setText("本機IP: " + socketImpl.getIP());
         serverRadio.setChecked(true);
 
         // 設置RadioGroup的監聽器
@@ -61,30 +61,35 @@ public class MainActivity extends Activity implements SocketImpl.SocketListener 
         serverIpLayout = findViewById(R.id.serverIpLayout);
         serverIpEditText = findViewById(R.id.serverIpEditText);
         scrollView = findViewById(R.id.scrollView);
-        socket = new SocketImpl(this);
+        socketImpl = new SocketImpl(this);
     }
 
     private void setupListeners() {
         startButton.setOnClickListener(v -> {
-            if (!socket.isRunning()) {
+            if (!socketImpl.isRunning()) {
                 startConnection();
             } else {
-                socket.stop();
+                socketImpl.stop();
             }
         });
 
         sendButton.setOnClickListener(v -> {
             String message = inputText.getText().toString();
             if (!message.isEmpty()) {
-                socket.sendMessage(message);
-                appendMessage("發送: " + message);
-                inputText.setText("");
+                if (socketImpl.isRunning()) {
+                    socketImpl.sendMessage(message);
+                    appendMessage("發送: " + message);
+                    inputText.setText("");
+                } else {
+                    appendMessage("無法發送!!!");
+                }
+
             }
         });
     }
 
     public void appendMessage(String message) {
-        messageText.append(message + "\n");
+        messageText.append(message+"\n");
         scrollView.fullScroll(View.FOCUS_DOWN);
     }
 
@@ -98,22 +103,22 @@ public class MainActivity extends Activity implements SocketImpl.SocketListener 
         }
 
         if (serverRadio.isChecked()) {
-            socket.startServer(port);
+            socketImpl.startServer(port);
         } else {
             String serverIP = serverIpEditText.getText().toString();
             if (serverIP.isEmpty()) {
-                Toast.makeText(this, "請輸入服務器IP", Toast.LENGTH_SHORT).show();
-                return;
+                socketImpl.scanForServer(port);
+            } else {
+                socketImpl.startClient(serverIP, port);
             }
-            socket.startClient(serverIP, port);
         }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (socket != null && socket.isRunning()) {
-            socket.stop();
+        if (socketImpl != null) {
+            socketImpl.stop();
         }
     }
 
@@ -154,6 +159,13 @@ public class MainActivity extends Activity implements SocketImpl.SocketListener 
     public void Error(String err) {
         runOnUiThread(() -> {
             appendMessage(err);
+        });
+    }
+
+    @Override
+    public void findServer(String host) {
+        runOnUiThread(() -> {
+            serverIpEditText.setText(host);
         });
     }
 }
