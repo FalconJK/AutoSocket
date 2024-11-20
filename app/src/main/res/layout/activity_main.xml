@@ -52,8 +52,9 @@
             android:id="@+id/serverIpEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="請輸入Server IP"
-            android:inputType="text" />
+            android:inputType="numberDecimal"
+            android:digits="0123456789."
+            android:hint="請輸入 IP 地址" />
     </LinearLayout>
 
     <!-- Port設定 -->
@@ -94,6 +95,7 @@
 
     <!-- 訊息顯示區域 -->
     <ScrollView
+        android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
